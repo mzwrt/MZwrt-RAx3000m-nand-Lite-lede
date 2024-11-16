@@ -38,7 +38,7 @@ jobs:
         sudo -E systemctl daemon-reload
         sudo -E apt clean
         sudo -E timedatectl set-timezone "Asia/Shanghai"
-        git config --global user.name 'GitHub Actions' && git config --global user.email 'waiquwang@gmail.com'
+        git config --global user.name 'GitHub Actions' && git config --global user.email '${{ secrets.GH_MAIL }}'
         
     - name: Clone source code
       env: 
@@ -75,7 +75,12 @@ jobs:
     - name: Build firmware
       working-directory: ./openwrt
       run: |
-        make -j$(nproc) V=99 2>&1 | grep -E "(warning|error)"
+        echo "========== 注意：克隆仓库自编译请删除下面这一行前面的#号 ============="
+        #make -j$(nproc) V=99
+        echo "========== 注意：克隆仓库自编译请删除下面这一行 ============="
+        ${{ secrets.DOWNLOAD_LEDE }}
+        echo "=========== 注意：克隆仓库自编译请删除上面面这一行 ============"
+
 
         echo "======================="
         echo "Space usage:"
