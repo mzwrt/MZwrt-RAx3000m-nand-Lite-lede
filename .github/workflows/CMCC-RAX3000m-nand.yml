@@ -6,7 +6,7 @@ on:
 
 # 定时触发编译
   schedule:
-    - cron: 25 18 * * 5
+    - cron: 25 5 * * 5
 
 # 点赞☆Star触发编译
 #  watch:
@@ -63,7 +63,7 @@ jobs:
         CONFIG_FILE: './config/rax3000m.config'
       run: |
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE ./openwrt/.config
-        cd openwrt && cat .config && make defconfig && cat .config
+        cd openwrt && make defconfig
         
     - name: Download package
       working-directory: ./openwrt
@@ -75,12 +75,7 @@ jobs:
     - name: Build firmware
       working-directory: ./openwrt
       run: |
-        echo "========== 注意：克隆仓库自编译请删除下面这一行前面的#号 ============="
-        #make -j$(nproc) V=99
-        echo "========== 注意：克隆仓库自编译请删除下面这一行 ============="
-        ${{ secrets.DOWNLOAD_LEDE }}
-        echo "=========== 注意：克隆仓库自编译请删除上面面这一行 ============"
-
+        make -j$(nproc) || make -j1 V=99
 
         echo "======================="
         echo "Space usage:"
