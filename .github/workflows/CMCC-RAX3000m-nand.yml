@@ -25,7 +25,7 @@ jobs:
       run: |
         sudo -E swapoff -a
         sudo -E rm -f /swapfile
-        docker rmi `docker images -q`
+        # docker rmi `docker images -q`
         sudo -E apt-mark hold grub-efi-amd64-signed
         sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* snap*
         sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
