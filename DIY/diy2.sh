@@ -152,3 +152,42 @@ net.ipv4.tcp_sack=1
 net.ipv4.tcp_rfc1337=1
 
 EOL
+
+#=================================================
+# WAN6 自动刷新脚本
+#=================================================
+mkdir -p package/base-files/files/etc/hotplug.d/iface
+
+cat <<'EOL' >> package/base-files/files/etc/hotplug.d/iface/60-wan6-refresh
+#!/bin/sh
+# WAN6 自动刷新脚本
+# 当 WAN 接口 link-up 或 ifup 时触发 WAN6 重启，确保自动获取 IPv6
+# 兼容光猫重启及链路波动
+
+[ "$INTERFACE" != "wan" ] && exit 0
+
+case "$ACTION" in
+    ifup|link-up)
+        logger -t WAN6-refresh "WAN interface is up, refreshing WAN6"
+
+        # 等待链路稳定
+        sleep 5
+
+        # 先关闭 WAN6，再重新启动
+        /sbin/ifdown wan6
+        sleep 1
+        /sbin/ifup wan6
+
+        # 可选：刷新防火墙，确保规则匹配新 IPv6
+        # /etc/init.d/firewall reload
+        ;;
+esac
+
+exit 0
+EOL
+
+# 赋予执行权限
+chmod +x package/base-files/files/etc/hotplug.d/iface/60-wan6-refresh
+#=================================================
+# WAN6 自动刷新脚本 END
+#=================================================
