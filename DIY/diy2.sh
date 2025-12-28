@@ -27,7 +27,8 @@ echo -e "\e[38;5;21m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\e[0m
 ############################
 # CPU 优化
 ############################
-cat <<'EOF' > files/etc/uci-defaults/99-irq-rps-optimize
+
+cat <<'EOF' > package/base-files/files/etc/uci-defaults/99-irq-rps-optimize
 #!/bin/sh
 # 99-irq-rps-optimize
 # For MT798x (CMCC RAX3000M / MzWrt)
@@ -114,7 +115,7 @@ echo "[IRQ-OPT] done"
 exit 0
 EOF
 
-chmod 0755 files/etc/uci-defaults/99-irq-rps-optimize
+chmod 0755 package/base-files/files/etc/uci-defaults/99-irq-rps-optimize
 ############################
 # CPU 优化-END
 ############################
