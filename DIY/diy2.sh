@@ -24,18 +24,101 @@ echo -e "\e[38;5;21m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\e[0m
 \e[38;5;81m\  \e[38;5;33mM Z W r t  By  \e[38;5;82mhttps://github.com/mzwrt\e[0m   / \e[0m
 \e[38;5;21m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\e[0m" > package/base-files/files/etc/banner
 
-# 开启 irqbalance
-cat <<EOL >> package/base-files/files/etc/uci-defaults/99-irqbalance-settings
+############################
+# CPU 优化
+############################
+cat <<'EOF' > files/etc/uci-defaults/99-irq-rps-optimize
 #!/bin/sh
-# 开启 irqbalance
-# 修改 option enabled '0' 为 option enabled '1'
-sed -i "s/option enabled '0'/option enabled '1'/g" /etc/config/irqbalance
+# 99-irq-rps-optimize
+# For MT798x (CMCC RAX3000M / MzWrt)
+# One-shot init + persistent hotplug reapply
 
-# 取消 option interval '10' 前面的 # 号
-sed -i "s/#option interval '10'/option interval '10'/g" /etc/config/irqbalance
+echo "[IRQ-OPT] start initial optimization"
+
+############################
+# 1. 关闭 irqbalance
+############################
+if [ -f /etc/config/irqbalance ]; then
+    uci set irqbalance.irqbalance.enabled='0'
+    uci commit irqbalance
+    /etc/init.d/irqbalance stop 2>/dev/null
+    /etc/init.d/irqbalance disable 2>/dev/null
+fi
+
+############################
+# 2. 立即应用 IRQ / RPS
+############################
+apply_irq() {
+    ETH_IRQS="$(grep '15100000.ethernet' /proc/interrupts | awk '{print $1}' | tr -d ':')"
+    WIFI_IRQ="$(grep 'mt7915e' /proc/interrupts | awk '{print $1}' | tr -d ':')"
+
+    # Ethernet → CPU0
+    for irq in $ETH_IRQS; do
+        [ -d /proc/irq/$irq ] && echo 1 > /proc/irq/$irq/smp_affinity
+    done
+
+    # WiFi → CPU1
+    [ -n "$WIFI_IRQ" ] && [ -d /proc/irq/$WIFI_IRQ ] && echo 2 > /proc/irq/$WIFI_IRQ/smp_affinity
+}
+
+apply_rps() {
+    # br-lan RX → CPU1
+    for q in /sys/class/net/br-lan/queues/rx-*; do
+        [ -f "$q/rps_cpus" ] && echo 2 > "$q/rps_cpus"
+    done
+
+    # WAN RX → CPU0
+    for q in /sys/class/net/eth1/queues/rx-*; do
+        [ -f "$q/rps_cpus" ] && echo 1 > "$q/rps_cpus"
+    done
+}
+
+apply_irq
+apply_rps
+
+############################
+# 3. 写入 hotplug 持久脚本
+############################
+HOTPLUG_DIR="/etc/hotplug.d/net"
+HOTPLUG_FILE="$HOTPLUG_DIR/99-irq-rps"
+
+mkdir -p "$HOTPLUG_DIR"
+
+cat > "$HOTPLUG_FILE" << 'EOT'
+#!/bin/sh
+[ "$ACTION" = "ifup" ] || exit 0
+
+ETH_IRQS="$(grep '15100000.ethernet' /proc/interrupts | awk '{print $1}' | tr -d ':')"
+WIFI_IRQ="$(grep 'mt7915e' /proc/interrupts | awk '{print $1}' | tr -d ':')"
+
+for irq in $ETH_IRQS; do
+    [ -d /proc/irq/$irq ] && echo 1 > /proc/irq/$irq/smp_affinity
+done
+
+[ -n "$WIFI_IRQ" ] && [ -d /proc/irq/$WIFI_IRQ ] && echo 2 > /proc/irq/$WIFI_IRQ/smp_affinity
+
+for q in /sys/class/net/br-lan/queues/rx-*; do
+    [ -f "$q/rps_cpus" ] && echo 2 > "$q/rps_cpus"
+done
+
+for q in /sys/class/net/eth1/queues/rx-*; do
+    [ -f "$q/rps_cpus" ] && echo 1 > "$q/rps_cpus"
+done
 
 exit 0
-EOL
+EOT
+
+chmod +x "$HOTPLUG_FILE"
+
+echo "[IRQ-OPT] done"
+exit 0
+EOF
+
+chmod 0755 files/etc/uci-defaults/99-irq-rps-optimize
+############################
+# CPU 优化-END
+############################
+
 
 cat <<EOL >> package/base-files/files/etc/uci-defaults/99-MzWrt-settings
 #!/bin/sh
