@@ -19,11 +19,33 @@ jobs:
     - name: Clone Repository
       uses: actions/checkout@v4
 
+      # 检查磁盘并挂载最大磁盘
+    - name: Find and mount largest disk
+      run: |
+          # 查看所有磁盘和挂载点
+          df -h
+          # 使用 lsblk 或者 df 查找最大磁盘
+          largest_disk=$(lsblk -o NAME,SIZE,MOUNTPOINT | grep -vE 'MOUNTPOINT|/dev/loop' | sort -k2 -h | tail -n 1 | awk '{print $1}')
+          echo "Largest disk is /dev/$largest_disk"
+          
+          # 创建挂载点
+          sudo mkdir -p /mnt/openwrt
+          
+          # 挂载最大磁盘到 /mnt/openwrt
+          sudo mount /dev/$largest_disk /mnt/openwrt
+          
+          # 验证挂载成功
+          df -h /mnt/openwrt
+          
+          # 如果需要永久挂载，可以修改 fstab
+          echo "/dev/$largest_disk /mnt/openwrt ext4 defaults 0 2" | sudo tee -a /etc/fstab
+
+
     - name: Initialization environment
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        cd /mnt
+        cd /mnt/openwrt
         sudo -E swapoff -a
         sudo -E rm -f /swapfile
         # docker rmi `docker images -q`
@@ -52,7 +74,7 @@ jobs:
         chmod +x ./diy1.sh && ./diy1.sh
 
     - name: Update & Install feeds
-      working-directory: ./openwrt
+      working-directory: /mnt/openwrt/openwrt
       run: |
         ./scripts/feeds update -a
         ./scripts/feeds install -a
