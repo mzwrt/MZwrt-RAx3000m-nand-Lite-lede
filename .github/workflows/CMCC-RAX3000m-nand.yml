@@ -86,13 +86,14 @@ jobs:
         chmod +x ./diy2.sh && ./diy2.sh
         
     - name: Configuration Customization - Build_mt7981_rax3000m
+      working-directory: /mnt/openwrt/openwrt
       env:
         CONFIG_FILE: './config/rax3000m.config'
       run: |
         # [ -e $CONFIG_FILE ] && mv $CONFIG_FILE ./openwrt/.config
         wget https://raw.githubusercontent.com/mzwrt/MZwrt-RAx3000m-nand-Lite-lede/refs/heads/main/config/rax3000m.config
         mv rax3000m.config .config
-        cd openwrt && make defconfig
+        make defconfig
         
     - name: Download package
       working-directory: /mnt/openwrt/openwrt
