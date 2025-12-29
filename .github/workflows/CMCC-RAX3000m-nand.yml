@@ -74,6 +74,7 @@ jobs:
         chmod +x ./diy1.sh && ./diy1.sh
 
     - name: Update & Install feeds
+      working-directory: /mnt/openwrt/openwrt
       run: |
         ./scripts/feeds update -a
         ./scripts/feeds install -a
@@ -91,7 +92,7 @@ jobs:
         cd openwrt && make defconfig
         
     - name: Download package
-      working-directory: ./openwrt
+      working-directory: /mnt/openwrt/openwrt
       run: |
         echo "======================="
         echo "Space usage:"
@@ -104,7 +105,7 @@ jobs:
         find dl -size -1024c -exec rm -f {} \;
 
     - name: Build firmware
-      working-directory: ./openwrt
+      working-directory: /mnt/openwrt/openwrt
       run: |
         echo "======================="
         echo "Space usage:"
@@ -135,7 +136,7 @@ jobs:
         echo "RELEASE_NAME=$release_name" >> $GITHUB_OUTPUT
 
     - name: Create versioned release directory
-      working-directory: ./openwrt
+      working-directory: /mnt/openwrt/openwrt
       run: |
         mkdir -p ./artifact/${{ steps.generate_name.outputs.RELEASE_NAME }}/
         cp -r ./bin/targets/mediatek/filogic/*.bin ./artifact/${{ steps.generate_name.outputs.RELEASE_NAME }}/
@@ -153,17 +154,16 @@ jobs:
         # 将修改后的内容保存为 GitHub 环境变量
         echo "sha256sums=$sha256sums_content" >> $GITHUB_ENV
 
-
     - name: Upload Firmwares
       uses: actions/upload-artifact@main
       with:
         name: CMCC-RAX3000M-OpenWrt
-        path: openwrt/artifact/${{ steps.generate_name.outputs.RELEASE_NAME }}/*
+        path: /mnt/openwrt/openwrt/artifact/${{ steps.generate_name.outputs.RELEASE_NAME }}/*
 
     - name: Create Release & Upload
       uses: ncipollo/release-action@v1.14.0
       with:
-        artifacts: openwrt/artifact/${{ steps.generate_name.outputs.RELEASE_NAME }}/*
+        artifacts: /mnt/openwrt/openwrt/artifact/${{ steps.generate_name.outputs.RELEASE_NAME }}/*
         name: ${{ steps.generate_name.outputs.RELEASE_NAME }}
         tag: ${{ steps.generate_name.outputs.RELEASE_TAG }}
         body: |
