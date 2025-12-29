@@ -68,6 +68,11 @@ jobs:
     - name: Download package
       working-directory: ./openwrt
       run: |
+        echo "======================="
+        echo "Space usage:"
+        echo "======================="
+        df -h
+        echo "======================="
         make download -j16
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
@@ -75,6 +80,12 @@ jobs:
     - name: Build firmware
       working-directory: ./openwrt
       run: |
+        echo "======================="
+        echo "Space usage:"
+        echo "======================="
+        df -h
+        echo "======================="
+      
         make -j$(nproc) || make -j1 V=99
 
         echo "======================="
