@@ -45,7 +45,6 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        cd /mnt/openwrt
         sudo -E swapoff -a
         sudo -E rm -f /swapfile
         # docker rmi `docker images -q`
@@ -64,11 +63,10 @@ jobs:
         git config --global user.name 'GitHub Actions' && git config --global user.email '${{ secrets.GH_MAIL }}'
         
     - name: Clone source code
-      working-directory: /mnt/openwrt/openwrt
+      working-directory: /mnt/openwrt
       env: 
         REPO_URL: https://github.com/coolsnowwolf/lede
       run: |
-        cd /mnt/openwrt
         git clone $REPO_URL openwrt
         cd openwrt
         # cp -f ../DIY/diy1.sh ./
@@ -76,7 +74,6 @@ jobs:
         chmod +x ./diy1.sh && ./diy1.sh
 
     - name: Update & Install feeds
-      working-directory: /mnt/openwrt/openwrt
       run: |
         ./scripts/feeds update -a
         ./scripts/feeds install -a
