@@ -25,7 +25,7 @@ jobs:
           # 查看所有磁盘和挂载点
           df -h
           # 使用 lsblk 或者 df 查找最大磁盘
-          largest_disk=$(lsblk -o NAME,SIZE,MOUNTPOINT | grep -vE 'MOUNTPOINT|/dev/loop' | sort -k2 -h | tail -n 1 | awk '{print $1}')
+          largest_disk=$(lsblk -o NAME,SIZE,MOUNTPOINT | grep -vE 'MOUNTPOINT|/dev/loop' | sort -k2 -h | tail -n 1 | awk '{print $1}' | sed 's/^[^a-zA-Z0-9]*//g')
           echo "Largest disk is /dev/$largest_disk"
           
           # 创建挂载点
@@ -64,9 +64,11 @@ jobs:
         git config --global user.name 'GitHub Actions' && git config --global user.email '${{ secrets.GH_MAIL }}'
         
     - name: Clone source code
+      working-directory: /mnt/openwrt/openwrt
       env: 
         REPO_URL: https://github.com/coolsnowwolf/lede
       run: |
+        cd /mnt/openwrt
         git clone $REPO_URL openwrt
         cd openwrt
         # cp -f ../DIY/diy1.sh ./
