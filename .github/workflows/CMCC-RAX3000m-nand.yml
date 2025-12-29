@@ -31,6 +31,9 @@ jobs:
           # 创建挂载点
           sudo mkdir -p /mnt/openwrt
           
+          # 确保目录权限正确
+          sudo chown -R $USER:$USER /mnt/openwrt
+          
           # 挂载最大磁盘到 /mnt/openwrt
           sudo mount /dev/$largest_disk /mnt/openwrt
           
